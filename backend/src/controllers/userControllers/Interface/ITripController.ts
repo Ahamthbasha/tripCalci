@@ -1,20 +1,12 @@
-// controllers/userControllers/Interface/ITripController.ts
-import { Request, Response } from "express";
-
-export interface IAuthRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    role: string;
-  };
-}
+import { Response } from "express";
+import { AuthenticatedRequest } from "../../../interface/express"; 
 
 export interface ITripController {
-  uploadTrip(req: IAuthRequest, res: Response): Promise<void>;
-  getUserTrips(req: IAuthRequest, res: Response): Promise<void>;
-  getTripDetails(req: IAuthRequest, res: Response): Promise<void>;
-  getTripVisualization(req: IAuthRequest, res: Response): Promise<void>; // NEW
-  getMultipleTrips(req: IAuthRequest, res: Response): Promise<void>;
-  getMultipleTripsVisualization(req: IAuthRequest, res: Response): Promise<void>; // NEW
-  deleteTrip(req: IAuthRequest, res: Response): Promise<void>;
+  uploadTrip(req: AuthenticatedRequest, res: Response): Promise<void>;
+  getUserTrips(req: AuthenticatedRequest, res: Response): Promise<void>;
+  getTripDetails(req: AuthenticatedRequest, res: Response): Promise<void>;
+  getTripVisualization(req: AuthenticatedRequest, res: Response): Promise<void>;
+  getMultipleTrips(req: AuthenticatedRequest, res: Response): Promise<void>;
+  getMultipleTripsVisualization(req: AuthenticatedRequest, res: Response): Promise<void>;
+  deleteTrip(req: AuthenticatedRequest, res: Response): Promise<void>;
 }

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { IUserController } from "./Interface/IUserAuthController";
 import { IUserService } from "../../services/userServie/interface/IUserAuthService";
+import { ValidationHelper } from "../../utils/validation";
 
 export class UserController implements IUserController {
   constructor(private userService: IUserService) {}
@@ -9,7 +10,7 @@ export class UserController implements IUserController {
     try {
       const { email, password } = req.body;
 
-      // Validation
+      // Basic presence validation
       if (!email || !password) {
         res.status(400).json({
           success: false,
@@ -18,16 +19,34 @@ export class UserController implements IUserController {
         return;
       }
 
-      if (password.length < 8) {
+      // Validate email format
+      const emailValidation = ValidationHelper.validateEmail(email);
+      if (!emailValidation.isValid) {
         res.status(400).json({
           success: false,
-          message: "Password must be at least 8 characters",
+          message: emailValidation.message,
         });
         return;
       }
 
+      // Validate password strength
+      const passwordValidation = ValidationHelper.validatePassword(password);
+      if (!passwordValidation.isValid) {
+        res.status(400).json({
+          success: false,
+          message: passwordValidation.message,
+        });
+        return;
+      }
+
+      // Sanitize email
+      const sanitizedEmail = ValidationHelper.sanitizeEmail(email);
+
       // Call service
-      const result = await this.userService.login({ email, password });
+      const result = await this.userService.login({
+        email: sanitizedEmail,
+        password,
+      });
 
       // Handle failure
       if (!result.success) {
@@ -42,9 +61,9 @@ export class UserController implements IUserController {
       const isProduction = process.env.NODE_ENV === "production";
 
       const cookieOptions = {
-        httpOnly: true, // Prevents client-side JS from accessing the cookie
-        secure: isProduction, // Only send over HTTPS in production
-        sameSite: isProduction ? ("none" as const) : ("lax" as const), // CSRF protection
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? ("none" as const) : ("lax" as const),
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: "/",
       };
@@ -74,11 +93,12 @@ export class UserController implements IUserController {
 
   async logout(_req: Request, res: Response): Promise<void> {
     try {
-      // Clear both cookies with same options used when setting them
       const cookieOptions = {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? ("none" as const) : ("lax" as const),
+        sameSite: process.env.NODE_ENV === "production"
+          ? ("none" as const)
+          : ("lax" as const),
         path: "/",
       };
 

@@ -1,4 +1,3 @@
-// services/userServie/TripDTOMapper.ts
 import {
   ITripVisualizationDTO,
   IPathSegmentDTO,
@@ -11,9 +10,8 @@ import {
 import { ITrip, IGPSPoint, IIdling, IStoppage, IOverspeedSegment } from "../../models/tripModel";
 
 export class TripDTOMapper {
-  private readonly OVERSPEED_THRESHOLD = 60; // km/h
+  private readonly OVERSPEED_THRESHOLD = 60;
 
-  // ==================== FORMAT HELPERS ====================
   private formatDuration(seconds: number): string {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -57,7 +55,6 @@ export class TripDTOMapper {
     return `${formatTime(start)} to ${formatTime(end)}`;
   }
 
-  // ==================== MAP BOUNDS CALCULATION ====================
   private calculateBounds(points: IGPSPoint[]) {
     if (points.length === 0) {
       return { north: 0, south: 0, east: 0, west: 0 };
@@ -74,7 +71,6 @@ export class TripDTOMapper {
     };
   }
 
-  // ==================== PATH SEGMENTS GENERATION ====================
   private generatePathSegments(trip: ITrip): IPathSegmentDTO[] {
     const segments: IPathSegmentDTO[] = [];
     const points = trip.gpsPoints;
@@ -90,7 +86,6 @@ export class TripDTOMapper {
       const isOverspeeding = speed > this.OVERSPEED_THRESHOLD;
       const segmentType = isOverspeeding ? 'overspeeding' : 'normal';
 
-      // Start new segment if type changes or first point
       if (!currentSegment || currentType !== segmentType) {
         if (currentSegment) {
           segments.push(currentSegment);
@@ -109,7 +104,6 @@ export class TripDTOMapper {
         };
         currentType = segmentType;
       } else {
-        // Add to current segment
         currentSegment.points.push({
           latitude: point.latitude,
           longitude: point.longitude,
@@ -120,8 +114,6 @@ export class TripDTOMapper {
         }
       }
     }
-
-    // Push final segment
     if (currentSegment) {
       segments.push(currentSegment);
     }
@@ -129,14 +121,12 @@ export class TripDTOMapper {
     return segments;
   }
 
-  // ==================== MARKERS GENERATION ====================
   private generateMarkers(trip: ITrip): IMarkerDTO[] {
     const markers: IMarkerDTO[] = [];
     const points = trip.gpsPoints;
 
     if (points.length === 0) return markers;
 
-    // Start marker (Red)
     markers.push({
       type: 'start',
       location: {
@@ -147,7 +137,6 @@ export class TripDTOMapper {
       color: 'red',
     });
 
-    // End marker (Red)
     markers.push({
       type: 'end',
       location: {
@@ -158,7 +147,6 @@ export class TripDTOMapper {
       color: 'red',
     });
 
-    // Stoppage markers (Blue)
     trip.stoppages.forEach((stop) => {
       markers.push({
         type: 'stoppage',
@@ -171,7 +159,6 @@ export class TripDTOMapper {
       });
     });
 
-    // Idling markers (Magenta)
     trip.idlings.forEach((idle) => {
       markers.push({
         type: 'idling',
@@ -187,7 +174,6 @@ export class TripDTOMapper {
     return markers;
   }
 
-  // ==================== EVENT AGGREGATION FOR TABLE ====================
   private generateTableData(
     trip: ITrip,
     page: number = 1,
@@ -200,7 +186,6 @@ export class TripDTOMapper {
       return { rows: [], totalRows: 0 };
     }
 
-    // Create event segments by aggregating consecutive points of the same state
     interface EventSegment {
       type: 'travel' | 'stoppage' | 'idling' | 'overspeeding';
       startIndex: number;
@@ -218,8 +203,6 @@ export class TripDTOMapper {
     for (let i = 0; i < points.length; i++) {
       const point = points[i];
       const speed = point.speed || 0;
-      
-      // Determine event type for this point
       let eventType: 'travel' | 'stoppage' | 'idling' | 'overspeeding';
       
       if (point.ignition === 'off') {
@@ -232,14 +215,11 @@ export class TripDTOMapper {
         eventType = 'travel';
       }
 
-      // If this is the first point or event type changed, start new segment
+      
       if (!currentSegment || currentSegment.type !== eventType) {
-        // Save previous segment
         if (currentSegment && i > 0) {
           segments.push(currentSegment);
         }
-
-        // Start new segment
         currentSegment = {
           type: eventType,
           startIndex: i,
@@ -254,11 +234,8 @@ export class TripDTOMapper {
           },
         };
       } else {
-        // Continue current segment
         currentSegment.endIndex = i;
         currentSegment.endTime = point.timestamp;
-
-        // Calculate distance from previous point
         if (i > 0) {
           const prevPoint = points[i - 1];
           const distance = this.calculateDistance(
@@ -269,19 +246,13 @@ export class TripDTOMapper {
         }
       }
     }
-
-    // Push the last segment
     if (currentSegment) {
       segments.push(currentSegment);
     }
-
-    // Calculate durations for each segment
     segments.forEach(segment => {
       segment.totalDuration = 
         (new Date(segment.endTime).getTime() - new Date(segment.startTime).getTime()) / 1000;
     });
-
-    // Convert segments to table rows
     segments.forEach(segment => {
       const summary: {
         travelDuration?: string;
@@ -298,8 +269,6 @@ export class TripDTOMapper {
             .map(p => p.speed || 0)
             .reduce((sum, s) => sum + s, 0) / (segment.endIndex - segment.startIndex + 1)
         : (startPoint.speed || 0);
-
-      // Build summary based on event type
       switch (segment.type) {
         case 'stoppage':
           summary.stoppedFrom = this.formatDuration(segment.totalDuration);
@@ -330,7 +299,6 @@ export class TripDTOMapper {
       });
     });
 
-    // Paginate
     const start = (page - 1) * pageSize;
     const end = start + pageSize;
     const paginatedRows = rows.slice(start, end);
@@ -341,15 +309,12 @@ export class TripDTOMapper {
     };
   }
 
-  // ==================== SUMMARY GENERATION ====================
   private generateSummary(trip: ITrip): ITripSummaryDTO {
-    // Calculate overspeed duration from segments
     const overspeedDuration = trip.overspeedSegments.reduce((total, seg) => {
       const duration = (new Date(seg.endTime).getTime() - new Date(seg.startTime).getTime()) / 1000;
       return total + duration;
     }, 0);
 
-    // Calculate overspeed distance from GPS points
     let overspeedDistance = 0;
     for (let i = 1; i < trip.gpsPoints.length; i++) {
       const point = trip.gpsPoints[i];
@@ -377,7 +342,7 @@ export class TripDTOMapper {
     point1: { latitude: number; longitude: number },
     point2: { latitude: number; longitude: number }
   ): number {
-    const R = 6371e3; // Earth's radius in meters
+    const R = 6371e3; 
     const φ1 = (point1.latitude * Math.PI) / 180;
     const φ2 = (point2.latitude * Math.PI) / 180;
     const Δφ = ((point2.latitude - point1.latitude) * Math.PI) / 180;
@@ -391,7 +356,6 @@ export class TripDTOMapper {
     return R * c;
   }
 
-  // ==================== MAIN MAPPING METHOD ====================
   public mapTripToVisualizationDTO(
     trip: ITrip,
     page: number = 1,
@@ -426,7 +390,6 @@ export class TripDTOMapper {
     };
   }
 
-  // ==================== MULTIPLE TRIPS MAPPING ====================
   public mapMultipleTripsToVisualizationDTO(
     trips: ITrip[]
   ): IMultipleTripsVisualizationDTO {

@@ -1,6 +1,3 @@
-// services/userServie/interface/ITripDTO.ts
-
-// ==================== GPS POINT DTO ====================
 export interface IGPSPointDTO {
   latitude: number;
   longitude: number;
@@ -10,20 +7,18 @@ export interface IGPSPointDTO {
   eventType?: 'normal' | 'stopped' | 'idling' | 'overspeeding';
 }
 
-// ==================== PATH SEGMENT DTO ====================
 export interface IPathSegmentDTO {
   points: Array<{
     latitude: number;
     longitude: number;
   }>;
-  color: string; // 'blue' | 'cyan' | 'magenta'
+  color: string;
   type: 'normal' | 'overspeeding';
   startTime: string;
   endTime: string;
   maxSpeed?: number;
 }
 
-// ==================== MARKER DTO ====================
 export interface IMarkerDTO {
   type: 'start' | 'end' | 'stoppage' | 'idling';
   location: {
@@ -31,18 +26,16 @@ export interface IMarkerDTO {
     longitude: number;
   };
   label: string;
-  duration?: number; // in seconds
+  duration?: number;
   startTime?: string;
   endTime?: string;
-  color: string; // 'red' | 'blue' | 'magenta'
+  color: string;
 }
-
-// ==================== TABLE ROW DTO ====================
 export interface ITableRowDTO {
-  timeRange: string; // "11:30:24 PM to 11:40:24 PM"
-  point: string; // "40.7128° N, 74.0060° W"
+  timeRange: string;
+  point: string; 
   ignition: 'ON' | 'OFF';
-  speed: string; // "28.5 KM/H"
+  speed: string; 
   summary: {
     travelDuration?: string;
     stoppedFrom?: string;
@@ -52,26 +45,20 @@ export interface ITableRowDTO {
   };
 }
 
-// ==================== SUMMARY DTO ====================
 export interface ITripSummaryDTO {
-  totalDistanceTravelled: string; // "63 KM"
-  totalTravelledDuration: string; // "1Hr 36 Mins"
-  overspeedingDuration: string; // "41 Mins"
-  overspeedingDistance: string; // "20.3 KM"
-  stoppedDuration: string; // "41 Mins"
-  idlingDuration?: string; // "10 Mins"
+  totalDistanceTravelled: string; 
+  totalTravelledDuration: string;
+  overspeedingDuration: string; 
+  overspeedingDistance: string; 
+  stoppedDuration: string; 
+  idlingDuration?: string;
 }
 
-// ==================== TRIP VISUALIZATION DTO ====================
 export interface ITripVisualizationDTO {
   tripId: string;
   tripName: string;
   uploadDate: string;
-  
-  // Summary Cards
   summary: ITripSummaryDTO;
-  
-  // Map Data
   mapData: {
     center: {
       latitude: number;
@@ -87,25 +74,20 @@ export interface ITripVisualizationDTO {
     pathSegments: IPathSegmentDTO[];
     markers: IMarkerDTO[];
   };
-  
-  // Table Data (paginated)
   tableData: {
     rows: ITableRowDTO[];
     totalRows: number;
     currentPage: number;
     pageSize: number;
   };
-  
-  // Raw data (optional, for debugging)
   rawGPSPoints?: IGPSPointDTO[];
 }
 
-// ==================== MULTIPLE TRIPS DTO ====================
 export interface IMultipleTripsVisualizationDTO {
   trips: Array<{
     tripId: string;
     tripName: string;
-    color: string; // Different color for each trip
+    color: string;
     pathSegments: IPathSegmentDTO[];
     markers: IMarkerDTO[];
     summary: ITripSummaryDTO;

@@ -1,8 +1,6 @@
-// api/action/userAction.ts
 import { API } from "../../service/axios";
 import userRouterEndPoints from "../../types/endpoints/userEndPoint";
 
-// ==================== TRIP UPLOAD ====================
 export const uploadTrip = async (formData: FormData) => {
   const response = await API.post(
     userRouterEndPoints.userUploadTrip,
@@ -11,7 +9,6 @@ export const uploadTrip = async (formData: FormData) => {
   return response.data;
 };
 
-// ==================== GET ALL TRIPS ====================
 export const trips = async (page: number = 1, limit: number = 10) => {
   const response = await API.get(userRouterEndPoints.userGetTrip, {
     params: { page, limit },
@@ -19,7 +16,6 @@ export const trips = async (page: number = 1, limit: number = 10) => {
   return response.data;
 };
 
-// ==================== GET SPECIFIC TRIP (RAW DATA) ====================
 export const getSpecificTrip = async (tripId: string) => {
   const response = await API.get(
     `${userRouterEndPoints.userGetSpecificTrip}/${tripId}`
@@ -27,7 +23,6 @@ export const getSpecificTrip = async (tripId: string) => {
   return response.data;
 };
 
-// ==================== GET TRIP VISUALIZATION (FORMATTED FOR DISPLAY) ====================
 export const getTripVisualization = async (
   tripId: string,
   page: number = 1,
@@ -42,7 +37,6 @@ export const getTripVisualization = async (
   return response.data;
 };
 
-// ==================== GET MULTIPLE TRIPS ====================
 export const multipleTripDetail = async (tripIds: string[]) => {
   const response = await API.post(userRouterEndPoints.userGetMultipleTrip, {
     tripIds,
@@ -50,7 +44,6 @@ export const multipleTripDetail = async (tripIds: string[]) => {
   return response.data;
 };
 
-// ==================== GET MULTIPLE TRIPS VISUALIZATION (FOR MAP OVERLAY) ====================
 export const getMultipleTripsVisualization = async (tripIds: string[]) => {
   const response = await API.post(
     userRouterEndPoints.userGetMultipleTripsVisualization,
@@ -61,7 +54,6 @@ export const getMultipleTripsVisualization = async (tripIds: string[]) => {
   return response.data;
 };
 
-// ==================== DELETE TRIP ====================
 export const deleteTrip = async (tripId: string) => {
   const response = await API.delete(
     `${userRouterEndPoints.userDeleteTrip}/${tripId}`

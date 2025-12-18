@@ -6,7 +6,7 @@ export interface IGPSPoint {
   longitude: number;
   timestamp: Date;
   ignition: "on" | "off";
-  speed?: number; // Calculated speed in km/h
+  speed?: number; 
 }
 
 // Trip Summary Interface
