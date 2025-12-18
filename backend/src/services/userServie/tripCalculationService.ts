@@ -13,6 +13,7 @@ import {
 
 export class TripCalculationService implements ITripCalculationService {
   private readonly OVERSPEED_THRESHOLD = 60; // km/h
+  private readonly MIN_SPEED_THRESHOLD = 0.1; // km/h - to handle GPS noise
 
   calculateDistance(
     point1: { latitude: number; longitude: number },
@@ -31,7 +32,7 @@ export class TripCalculationService implements ITripCalculationService {
         new Date(point1.timestamp).getTime()) /
       1000; // seconds
 
-    if (timeDiff === 0) return 0;
+    if (timeDiff === 0 || timeDiff < 0) return 0;
 
     const speedMps = distance / timeDiff; // meters per second
     const speedKmh = speedMps * 3.6; // convert to km/h
@@ -137,15 +138,17 @@ export class TripCalculationService implements ITripCalculationService {
             new Date(stoppageStart.timestamp).getTime()) /
           1000;
 
-        stoppages.push({
-          startTime: stoppageStart.timestamp,
-          endTime: prev.timestamp,
-          duration,
-          location: {
-            latitude: stoppageStart.latitude,
-            longitude: stoppageStart.longitude,
-          },
-        });
+        if (duration > 0) {
+          stoppages.push({
+            startTime: stoppageStart.timestamp,
+            endTime: prev.timestamp,
+            duration,
+            location: {
+              latitude: stoppageStart.latitude,
+              longitude: stoppageStart.longitude,
+            },
+          });
+        }
 
         stoppageStart = null;
       }
@@ -159,15 +162,17 @@ export class TripCalculationService implements ITripCalculationService {
           new Date(stoppageStart.timestamp).getTime()) /
         1000;
 
-      stoppages.push({
-        startTime: stoppageStart.timestamp,
-        endTime: lastPoint.timestamp,
-        duration,
-        location: {
-          latitude: stoppageStart.latitude,
-          longitude: stoppageStart.longitude,
-        },
-      });
+      if (duration > 0) {
+        stoppages.push({
+          startTime: stoppageStart.timestamp,
+          endTime: lastPoint.timestamp,
+          duration,
+          location: {
+            latitude: stoppageStart.latitude,
+            longitude: stoppageStart.longitude,
+          },
+        });
+      }
     }
 
     return stoppages;
@@ -181,31 +186,43 @@ export class TripCalculationService implements ITripCalculationService {
       const current = points[i];
       const speed = current.speed || 0;
 
-      // Idling starts when ignition is on and speed is 0
-      if (current.ignition === "on" && speed === 0 && !idlingStart) {
+      // Idling starts when ignition is on and speed is 0 (or very low)
+      if (current.ignition === "on" && speed < this.MIN_SPEED_THRESHOLD && !idlingStart) {
         idlingStart = current;
       }
 
-      // Idling ends when speed becomes > 0 or ignition turns off
-      if (idlingStart && (speed > 0 || current.ignition === "off")) {
-        const duration =
-          (new Date(points[i - 1].timestamp).getTime() -
-            new Date(idlingStart.timestamp).getTime()) /
-          1000;
+      // Idling ends when speed becomes > threshold or ignition turns off
+      if (idlingStart) {
+        const shouldEndIdling = 
+          speed >= this.MIN_SPEED_THRESHOLD || 
+          current.ignition === "off";
 
-        if (duration > 0) {
-          idlings.push({
-            startTime: idlingStart.timestamp,
-            endTime: points[i - 1].timestamp,
-            duration,
-            location: {
-              latitude: idlingStart.latitude,
-              longitude: idlingStart.longitude,
-            },
-          });
+        if (shouldEndIdling) {
+          // For idling that ends due to movement, use previous point
+          // For idling that ends due to ignition off, use current point
+          const endPoint = (speed >= this.MIN_SPEED_THRESHOLD && i > 0) 
+            ? points[i - 1] 
+            : current;
+          
+          const duration =
+            (new Date(endPoint.timestamp).getTime() -
+              new Date(idlingStart.timestamp).getTime()) /
+            1000;
+
+          if (duration > 0) {
+            idlings.push({
+              startTime: idlingStart.timestamp,
+              endTime: endPoint.timestamp,
+              duration,
+              location: {
+                latitude: idlingStart.latitude,
+                longitude: idlingStart.longitude,
+              },
+            });
+          }
+
+          idlingStart = null;
         }
-
-        idlingStart = null;
       }
     }
 
@@ -255,16 +272,19 @@ export class TripCalculationService implements ITripCalculationService {
 
       // Overspeed segment ends
       if (segmentStart && speed <= this.OVERSPEED_THRESHOLD) {
+        // Use previous point as end since current point is no longer overspeeding
+        const endPoint = i > 0 ? points[i - 1] : current;
+        
         segments.push({
           startTime: segmentStart.timestamp,
-          endTime: points[i - 1].timestamp,
+          endTime: endPoint.timestamp,
           startLocation: {
             latitude: segmentStart.latitude,
             longitude: segmentStart.longitude,
           },
           endLocation: {
-            latitude: points[i - 1].latitude,
-            longitude: points[i - 1].longitude,
+            latitude: endPoint.latitude,
+            longitude: endPoint.longitude,
           },
           maxSpeed: maxSpeedInSegment,
         });

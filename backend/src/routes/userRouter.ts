@@ -17,14 +17,14 @@ router.post(
 //Trip detail
 
 router.post(
-    "/upload",
+    "/trips/upload",
     authMiddleware.authenticateToken,
     uploadCsv.single('file'),
     userTripController.uploadTrip.bind(userTripController)
 )
 
 router.get(
-    "/getAllTrips",
+    "/trips",
     authMiddleware.authenticateToken,
     userTripController.getUserTrips.bind(userTripController)
 )
@@ -35,8 +35,20 @@ router.get(
     userTripController.getTripDetails.bind(userTripController)
 )
 
+router.get(
+    "/trip/:tripId/visualization",
+    authMiddleware.authenticateToken,
+    userTripController.getTripVisualization.bind(userTripController)
+)
+
 router.post(
-    "/multiple",
+    "/trips/visualization",
+    authMiddleware.authenticateToken,
+    userTripController.getMultipleTripsVisualization.bind(userTripController)
+)
+
+router.post(
+    "/trips/multiple",
     authMiddleware.authenticateToken,
     userTripController.getMultipleTrips.bind(userTripController)
 )

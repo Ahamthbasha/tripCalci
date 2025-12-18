@@ -70,4 +70,17 @@ export class TripRepo extends GenericRepo<ITrip> implements ITripRepo {
       userId: new mongoose.Types.ObjectId(userId),
     }).exec();
   }
+
+  async findPaginatedByUserId(
+  userId: string,
+  page: number,
+  limit: number
+): Promise<ITrip[]> {
+  const skip = (page - 1) * limit;
+  return await Trip.find({ userId: new mongoose.Types.ObjectId(userId) })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .exec();
+}
 }

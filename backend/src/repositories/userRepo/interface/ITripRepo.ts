@@ -11,4 +11,10 @@ export interface ITripRepo extends IGenericRepo<ITrip> {
   updateTripCalculations(tripId: string, data: Partial<ITrip>): Promise<ITrip | null>;
   deleteAllByUserId(userId: string): Promise<number>;
   countByUserId(userId: string): Promise<number>;
+
+  findPaginatedByUserId(
+    userId: string,
+    page: number,
+    limit: number
+  ): Promise<ITrip[]>;
 }
