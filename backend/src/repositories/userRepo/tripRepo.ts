@@ -9,7 +9,8 @@ export class TripRepo extends GenericRepo<ITrip> implements ITripRepo {
   }
 
   async findByUserId(userId: string): Promise<ITrip[]> {
-    return await Trip.find({ userId: new mongoose.Types.ObjectId(userId) })
+    return await this.model
+      .find({ userId: new mongoose.Types.ObjectId(userId) })
       .sort({ createdAt: -1 })
       .exec();
   }
@@ -18,10 +19,12 @@ export class TripRepo extends GenericRepo<ITrip> implements ITripRepo {
     tripId: string,
     userId: string
   ): Promise<ITrip | null> {
-    return await Trip.findOne({
-      _id: new mongoose.Types.ObjectId(tripId),
-      userId: new mongoose.Types.ObjectId(userId),
-    }).exec();
+    return await this.model
+      .findOne({
+        _id: new mongoose.Types.ObjectId(tripId),
+        userId: new mongoose.Types.ObjectId(userId),
+      })
+      .exec();
   }
 
   async findMultipleByIdsAndUserId(
@@ -30,10 +33,11 @@ export class TripRepo extends GenericRepo<ITrip> implements ITripRepo {
   ): Promise<ITrip[]> {
     const objectIds = tripIds.map((id) => new mongoose.Types.ObjectId(id));
 
-    return await Trip.find({
-      _id: { $in: objectIds },
-      userId: new mongoose.Types.ObjectId(userId),
-    })
+    return await this.model
+      .find({
+        _id: { $in: objectIds },
+        userId: new mongoose.Types.ObjectId(userId),
+      })
       .sort({ createdAt: -1 })
       .exec();
   }
@@ -42,45 +46,49 @@ export class TripRepo extends GenericRepo<ITrip> implements ITripRepo {
     tripId: string,
     data: Partial<ITrip>
   ): Promise<ITrip | null> {
-    return await Trip.findByIdAndUpdate(
-      tripId,
-      {
-        $set: {
-          summary: data.summary,
-          stoppages: data.stoppages,
-          idlings: data.idlings,
-          overspeedSegments: data.overspeedSegments,
-          isProcessed: true,
+    return await this.model
+      .findByIdAndUpdate(
+        tripId,
+        {
+          $set: {
+            summary: data.summary,
+            stoppages: data.stoppages,
+            idlings: data.idlings,
+            overspeedSegments: data.overspeedSegments,
+            isProcessed: true,
+          },
         },
-      },
-      { new: true }
-    ).exec();
+        { new: true }
+      )
+      .exec();
   }
 
   async deleteAllByUserId(userId: string): Promise<number> {
-    const result = await Trip.deleteMany({
+    const result = await this.model.deleteMany({
       userId: new mongoose.Types.ObjectId(userId),
-    }).exec();
+    });
 
-    return result.deletedCount || 0;
+    return result.deletedCount ?? 0;
   }
 
   async countByUserId(userId: string): Promise<number> {
-    return await Trip.countDocuments({
+    return await this.model.countDocuments({
       userId: new mongoose.Types.ObjectId(userId),
-    }).exec();
+    });
   }
 
   async findPaginatedByUserId(
-  userId: string,
-  page: number,
-  limit: number
-): Promise<ITrip[]> {
-  const skip = (page - 1) * limit;
-  return await Trip.find({ userId: new mongoose.Types.ObjectId(userId) })
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .exec();
-}
+    userId: string,
+    page: number,
+    limit: number
+  ): Promise<ITrip[]> {
+    const skip = (page - 1) * limit;
+
+    return await this.model
+      .find({ userId: new mongoose.Types.ObjectId(userId) })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .exec();
+  }
 }

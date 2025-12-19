@@ -14,7 +14,7 @@ const userSchema = new Schema<IUser>(
     email: {
       type: String,
       required: [true, "Email is required"],
-      unique: true, // ✅ unique already creates index
+      unique: true, 
       lowercase: true,
       trim: true,
       maxlength: [254, "Email is too long"],

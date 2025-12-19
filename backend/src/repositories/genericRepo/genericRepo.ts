@@ -2,14 +2,18 @@ import { Model, Document } from "mongoose";
 import { IGenericRepo } from "./interface/IGenericRepo";
 
 export class GenericRepo<T extends Document> implements IGenericRepo<T> {
-  constructor(private model: Model<T>) {}
+  protected model: Model<T>;
+
+  constructor(model: Model<T>) {
+    this.model = model;
+  }
 
   async findById(id: string): Promise<T | null> {
     return await this.model.findById(id);
   }
 
-  async findOne(filter: Partial<T>): Promise<T | null> {
-    return await this.model.findOne(filter as any);
+  async findOne(filter: Record<string, unknown>): Promise<T | null> {
+    return await this.model.findOne(filter);
   }
 
   async create(data: Partial<T>): Promise<T> {
@@ -26,7 +30,7 @@ export class GenericRepo<T extends Document> implements IGenericRepo<T> {
     return result !== null;
   }
 
-  async findAll(filter?: Partial<T>): Promise<T[]> {
-    return await this.model.find((filter as any) || {});
+  async findAll(filter?: Record<string, unknown>): Promise<T[]> {
+    return await this.model.find(filter || {});
   }
 }
