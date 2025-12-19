@@ -16,13 +16,6 @@ export const trips = async (page: number = 1, limit: number = 10) => {
   return response.data;
 };
 
-export const getSpecificTrip = async (tripId: string) => {
-  const response = await API.get(
-    `${userRouterEndPoints.userGetSpecificTrip}/${tripId}`
-  );
-  return response.data;
-};
-
 export const getTripVisualization = async (
   tripId: string,
   page: number = 1,
@@ -34,13 +27,6 @@ export const getTripVisualization = async (
       params: { page, pageSize },
     }
   );
-  return response.data;
-};
-
-export const multipleTripDetail = async (tripIds: string[]) => {
-  const response = await API.post(userRouterEndPoints.userGetMultipleTrip, {
-    tripIds,
-  });
   return response.data;
 };
 

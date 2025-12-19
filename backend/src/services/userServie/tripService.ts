@@ -140,34 +140,6 @@ export class TripService implements ITripService {
     }
   }
 
-  async getTripDetails(
-    tripId: string,
-    userId: string
-  ): Promise<IGetTripDetailsResponse> {
-    try {
-      const trip = await this._tripRepo.findByIdAndUserId(tripId, userId);
-
-      if (!trip) {
-        return {
-          success: false,
-          message: "Trip not found or access denied",
-        };
-      }
-
-      return {
-        success: true,
-        message: "Trip details fetched successfully",
-        trip,
-      };
-    } catch (error) {
-      console.error("Get Trip Details Error:", error);
-      return {
-        success: false,
-        message: "Failed to fetch trip details",
-      };
-    }
-  }
-
   async getTripVisualization(
     tripId: string,
     userId: string,
@@ -200,37 +172,6 @@ export class TripService implements ITripService {
       return {
         success: false,
         message: "Failed to fetch trip visualization",
-      };
-    }
-  }
-
-  async getMultipleTrips(
-    tripIds: string[],
-    userId: string
-  ): Promise<IGetTripsResponse> {
-    try {
-      const trips = await this._tripRepo.findMultipleByIdsAndUserId(
-        tripIds,
-        userId
-      );
-
-      return {
-        success: true,
-        message: "Trips fetched successfully",
-        trips: trips.map((trip) => ({
-          id: trip._id.toString(),
-          tripName: trip.tripName,
-          uploadDate: trip.uploadDate,
-          summary: trip.summary,
-          isProcessed: trip.isProcessed,
-        })),
-      };
-    } catch (error) {
-      console.error("Get Multiple Trips Error:", error);
-      return {
-        success: false,
-        message: "Failed to fetch trips",
-        trips: [],
       };
     }
   }

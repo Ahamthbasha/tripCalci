@@ -251,30 +251,36 @@ export class TripCalculationService implements ITripCalculationService {
   }
 
   private detectOverspeedSegments(points: IGPSPoint[]): IOverspeedSegment[] {
-    const segments: IOverspeedSegment[] = [];
-    let segmentStart: IGPSPoint | null = null;
-    let maxSpeedInSegment = 0;
+  const segments: IOverspeedSegment[] = [];
+  let segmentStart: IGPSPoint | null = null;
+  let maxSpeedInSegment = 0;
 
-    for (let i = 0; i < points.length; i++) {
-      const current = points[i];
-      const speed = current.speed || 0;
+  for (let i = 0; i < points.length; i++) {
+    const current = points[i];
+    const speed = current.speed || 0;
 
-      // Overspeed segment starts
-      if (speed > this.OVERSPEED_THRESHOLD && !segmentStart) {
-        segmentStart = current;
-        maxSpeedInSegment = speed;
-      }
+    // Overspeed segment starts
+    if (speed > this.OVERSPEED_THRESHOLD && !segmentStart) {
+      segmentStart = current;
+      maxSpeedInSegment = speed;
+    }
 
-      // Track max speed in segment
-      if (segmentStart && speed > maxSpeedInSegment) {
-        maxSpeedInSegment = speed;
-      }
+    // Track max speed in segment
+    if (segmentStart && speed > maxSpeedInSegment) {
+      maxSpeedInSegment = speed;
+    }
 
-      // Overspeed segment ends
-      if (segmentStart && speed <= this.OVERSPEED_THRESHOLD) {
-        // Use previous point as end since current point is no longer overspeeding
-        const endPoint = i > 0 ? points[i - 1] : current;
-        
+    // Overspeed segment ends
+    if (segmentStart && speed <= this.OVERSPEED_THRESHOLD) {
+      const endPoint = i > 0 ? points[i - 1] : current;
+      
+      const duration =
+        (new Date(endPoint.timestamp).getTime() -
+          new Date(segmentStart.timestamp).getTime()) /
+        1000;
+
+      // Add ANY overspeed segment (no 1-second minimum as per task)
+      if (duration > 0) {
         segments.push({
           startTime: segmentStart.timestamp,
           endTime: endPoint.timestamp,
@@ -288,15 +294,23 @@ export class TripCalculationService implements ITripCalculationService {
           },
           maxSpeed: maxSpeedInSegment,
         });
-
-        segmentStart = null;
-        maxSpeedInSegment = 0;
       }
-    }
 
-    // Handle case where overspeed continues till the end
-    if (segmentStart && points.length > 0) {
-      const lastPoint = points[points.length - 1];
+      segmentStart = null;
+      maxSpeedInSegment = 0;
+    }
+  }
+
+  // Handle case where overspeed continues till the end
+  if (segmentStart && points.length > 0) {
+    const lastPoint = points[points.length - 1];
+    
+    const duration =
+      (new Date(lastPoint.timestamp).getTime() -
+        new Date(segmentStart.timestamp).getTime()) /
+      1000;
+
+    if (duration > 0) {
       segments.push({
         startTime: segmentStart.timestamp,
         endTime: lastPoint.timestamp,
@@ -311,9 +325,10 @@ export class TripCalculationService implements ITripCalculationService {
         maxSpeed: maxSpeedInSegment,
       });
     }
-
-    return segments;
   }
+
+  return segments;
+}
 
   private calculateSummary(
     totalDistance: number,

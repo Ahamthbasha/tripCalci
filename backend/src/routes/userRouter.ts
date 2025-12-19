@@ -30,12 +30,6 @@ router.get(
 )
 
 router.get(
-    "/trips/:tripId",
-    authMiddleware.authenticateToken,
-    userTripController.getTripDetails.bind(userTripController)
-)
-
-router.get(
     "/trip/:tripId/visualization",
     authMiddleware.authenticateToken,
     userTripController.getTripVisualization.bind(userTripController)
@@ -45,12 +39,6 @@ router.post(
     "/trips/visualization",
     authMiddleware.authenticateToken,
     userTripController.getMultipleTripsVisualization.bind(userTripController)
-)
-
-router.post(
-    "/trips/multiple",
-    authMiddleware.authenticateToken,
-    userTripController.getMultipleTrips.bind(userTripController)
 )
 
 router.delete(

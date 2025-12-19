@@ -4,7 +4,10 @@ import { IUserService } from "../../services/userServie/interface/IUserAuthServi
 import { ValidationHelper } from "../../utils/validation";
 
 export class UserController implements IUserController {
-  constructor(private userService: IUserService) {}
+  private _userService: IUserService
+  constructor(userService: IUserService) {
+    this._userService = userService
+  }
 
   async login(req: Request, res: Response): Promise<void> {
     try {
@@ -43,7 +46,7 @@ export class UserController implements IUserController {
       const sanitizedEmail = ValidationHelper.sanitizeEmail(email);
 
       // Call service
-      const result = await this.userService.login({
+      const result = await this._userService.login({
         email: sanitizedEmail,
         password,
       });

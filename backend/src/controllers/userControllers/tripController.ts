@@ -213,48 +213,6 @@ export class TripController implements ITripController {
     }
   }
 
-  async getTripDetails(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      if (!req.user || !req.user.id) {
-        res.status(401).json({
-          success: false,
-          message: "Unauthorized - Please login",
-        });
-        return;
-      }
-
-      const { tripId } = req.params;
-
-      if (!tripId) {
-        res.status(400).json({
-          success: false,
-          message: "Trip ID is required",
-        });
-        return;
-      }
-
-      const result = await this._tripService.getTripDetails(
-        tripId,
-        req.user.id
-      );
-
-      if (!result.success) {
-        res.status(404).json(result);
-        return;
-      }
-
-      res.status(200).json(result);
-    } catch (error) {
-      console.error("Get Trip Details Controller Error:", error);
-      res.status(500).json({
-        success: false,
-        message: "Internal server error",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
-  }
-
-  // NEW: Get Trip Visualization (formatted for frontend display)
   async getTripVisualization(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       if (!req.user || !req.user.id) {
@@ -300,43 +258,7 @@ export class TripController implements ITripController {
     }
   }
 
-  async getMultipleTrips(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      if (!req.user || !req.user.id) {
-        res.status(401).json({
-          success: false,
-          message: "Unauthorized - Please login",
-        });
-        return;
-      }
 
-      const { tripIds } = req.body;
-
-      if (!tripIds || !Array.isArray(tripIds) || tripIds.length === 0) {
-        res.status(400).json({
-          success: false,
-          message: "Trip IDs array is required",
-        });
-        return;
-      }
-
-      const result = await this._tripService.getMultipleTrips(
-        tripIds,
-        req.user.id
-      );
-
-      res.status(200).json(result);
-    } catch (error) {
-      console.error("Get Multiple Trips Controller Error:", error);
-      res.status(500).json({
-        success: false,
-        message: "Internal server error",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
-  }
-
-  // NEW: Get Multiple Trips Visualization (for map overlay)
   async getMultipleTripsVisualization(
     req: AuthenticatedRequest,
     res: Response

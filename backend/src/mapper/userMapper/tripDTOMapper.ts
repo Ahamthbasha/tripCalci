@@ -71,55 +71,78 @@ export class TripDTOMapper {
     };
   }
 
-  private generatePathSegments(trip: ITrip): IPathSegmentDTO[] {
-    const segments: IPathSegmentDTO[] = [];
-    const points = trip.gpsPoints;
+private generatePathSegments(trip: ITrip): IPathSegmentDTO[] {
+  const segments: IPathSegmentDTO[] = [];
+  const points = trip.gpsPoints;
 
-    if (points.length < 2) return segments;
+  if (points.length < 2) return segments;
 
-    let currentSegment: IPathSegmentDTO | null = null;
-    let currentType: 'normal' | 'overspeeding' = 'normal';
+  // Create a Set of timestamps that are within overspeed segments
+  const overspeedTimestamps = new Set<number>();
+  trip.overspeedSegments.forEach(seg => {
+    const startTime = new Date(seg.startTime).getTime();
+    const endTime = new Date(seg.endTime).getTime();
+    
+    points.forEach(point => {
+      const pointTime = new Date(point.timestamp).getTime();
+      if (pointTime >= startTime && pointTime <= endTime) {
+        overspeedTimestamps.add(pointTime);
+      }
+    });
+  });
 
-    for (let i = 0; i < points.length; i++) {
-      const point = points[i];
-      const speed = point.speed || 0;
-      const isOverspeeding = speed > this.OVERSPEED_THRESHOLD;
-      const segmentType = isOverspeeding ? 'overspeeding' : 'normal';
+  // Build segments based on whether points are in overspeed ranges
+  let currentSegment: IPathSegmentDTO | null = null;
+  let currentType: 'normal' | 'overspeeding' = 'normal';
 
-      if (!currentSegment || currentType !== segmentType) {
-        if (currentSegment) {
-          segments.push(currentSegment);
-        }
+  for (let i = 0; i < points.length; i++) {
+    const point = points[i];
+    const pointTime = new Date(point.timestamp).getTime();
+    
+    // Determine if this point is in an overspeed segment
+    const isOverspeeding = overspeedTimestamps.has(pointTime);
+    const segmentType = isOverspeeding ? 'overspeeding' : 'normal';
 
-        currentSegment = {
-          points: [{
-            latitude: point.latitude,
-            longitude: point.longitude,
-          }],
-          color: segmentType === 'overspeeding' ? 'cyan' : 'blue',
-          type: segmentType,
-          startTime: point.timestamp.toISOString(),
-          endTime: point.timestamp.toISOString(),
-          maxSpeed: speed,
-        };
-        currentType = segmentType;
-      } else {
-        currentSegment.points.push({
+    // Start new segment if type changes or it's the first point
+    if (!currentSegment || currentType !== segmentType) {
+      // Save previous segment if it exists
+      if (currentSegment) {
+        segments.push(currentSegment);
+      }
+
+      // Start new segment
+      currentSegment = {
+        points: [{
           latitude: point.latitude,
           longitude: point.longitude,
-        });
-        currentSegment.endTime = point.timestamp.toISOString();
-        if (speed > (currentSegment.maxSpeed || 0)) {
-          currentSegment.maxSpeed = speed;
-        }
+        }],
+        color: segmentType === 'overspeeding' ? 'cyan' : 'blue',
+        type: segmentType,
+        startTime: point.timestamp.toISOString(),
+        endTime: point.timestamp.toISOString(),
+        maxSpeed: point.speed || 0,
+      };
+      currentType = segmentType;
+    } else {
+      // Continue current segment
+      currentSegment.points.push({
+        latitude: point.latitude,
+        longitude: point.longitude,
+      });
+      currentSegment.endTime = point.timestamp.toISOString();
+      if ((point.speed || 0) > (currentSegment.maxSpeed || 0)) {
+        currentSegment.maxSpeed = point.speed || 0;
       }
     }
-    if (currentSegment) {
-      segments.push(currentSegment);
-    }
-
-    return segments;
   }
+  
+  // Add the last segment
+  if (currentSegment) {
+    segments.push(currentSegment);
+  }
+
+  return segments;
+}
 
   private generateMarkers(trip: ITrip): IMarkerDTO[] {
     const markers: IMarkerDTO[] = [];
@@ -175,139 +198,171 @@ export class TripDTOMapper {
   }
 
   private generateTableData(
-    trip: ITrip,
-    page: number = 1,
-    pageSize: number = 10
-  ): { rows: ITableRowDTO[]; totalRows: number } {
-    const rows: ITableRowDTO[] = [];
-    const points = trip.gpsPoints;
+  trip: ITrip,
+  page: number = 1,
+  pageSize: number = 10
+): { rows: ITableRowDTO[]; totalRows: number } {
+  const rows: ITableRowDTO[] = [];
+  const points = trip.gpsPoints;
 
-    if (points.length === 0) {
-      return { rows: [], totalRows: 0 };
-    }
-
-    interface EventSegment {
-      type: 'travel' | 'stoppage' | 'idling' | 'overspeeding';
-      startIndex: number;
-      endIndex: number;
-      startTime: Date;
-      endTime: Date;
-      totalDistance: number;
-      totalDuration: number;
-      location: { latitude: number; longitude: number };
-    }
-
-    const segments: EventSegment[] = [];
-    let currentSegment: EventSegment | null = null;
-
-    for (let i = 0; i < points.length; i++) {
-      const point = points[i];
-      const speed = point.speed || 0;
-      let eventType: 'travel' | 'stoppage' | 'idling' | 'overspeeding';
-      
-      if (point.ignition === 'off') {
-        eventType = 'stoppage';
-      } else if (speed < 0.1) {
-        eventType = 'idling';
-      } else if (speed > this.OVERSPEED_THRESHOLD) {
-        eventType = 'overspeeding';
-      } else {
-        eventType = 'travel';
-      }
-
-      
-      if (!currentSegment || currentSegment.type !== eventType) {
-        if (currentSegment && i > 0) {
-          segments.push(currentSegment);
-        }
-        currentSegment = {
-          type: eventType,
-          startIndex: i,
-          endIndex: i,
-          startTime: point.timestamp,
-          endTime: point.timestamp,
-          totalDistance: 0,
-          totalDuration: 0,
-          location: {
-            latitude: point.latitude,
-            longitude: point.longitude,
-          },
-        };
-      } else {
-        currentSegment.endIndex = i;
-        currentSegment.endTime = point.timestamp;
-        if (i > 0) {
-          const prevPoint = points[i - 1];
-          const distance = this.calculateDistance(
-            { latitude: prevPoint.latitude, longitude: prevPoint.longitude },
-            { latitude: point.latitude, longitude: point.longitude }
-          );
-          currentSegment.totalDistance += distance;
-        }
-      }
-    }
-    if (currentSegment) {
-      segments.push(currentSegment);
-    }
-    segments.forEach(segment => {
-      segment.totalDuration = 
-        (new Date(segment.endTime).getTime() - new Date(segment.startTime).getTime()) / 1000;
-    });
-    segments.forEach(segment => {
-      const summary: {
-        travelDuration?: string;
-        stoppedFrom?: string;
-        distance?: string;
-        overspeedingDuration?: string;
-        idlingDuration?: string;
-      } = {};
-
-      const startPoint = points[segment.startIndex];
-      const endPoint = points[segment.endIndex];
-      const avgSpeed = segment.endIndex > segment.startIndex 
-        ? points.slice(segment.startIndex, segment.endIndex + 1)
-            .map(p => p.speed || 0)
-            .reduce((sum, s) => sum + s, 0) / (segment.endIndex - segment.startIndex + 1)
-        : (startPoint.speed || 0);
-      switch (segment.type) {
-        case 'stoppage':
-          summary.stoppedFrom = this.formatDuration(segment.totalDuration);
-          break;
-        
-        case 'idling':
-          summary.idlingDuration = this.formatDuration(segment.totalDuration);
-          break;
-        
-        case 'overspeeding':
-          summary.travelDuration = this.formatDuration(segment.totalDuration);
-          summary.distance = this.formatDistance(segment.totalDistance);
-          summary.overspeedingDuration = this.formatDuration(segment.totalDuration);
-          break;
-        
-        case 'travel':
-          summary.travelDuration = this.formatDuration(segment.totalDuration);
-          summary.distance = this.formatDistance(segment.totalDistance);
-          break;
-      }
-
-      rows.push({
-        timeRange: this.formatTimeRange(segment.startTime, segment.endTime),
-        point: this.formatCoordinate(segment.location.latitude, segment.location.longitude),
-        ignition: startPoint.ignition.toUpperCase() as 'ON' | 'OFF',
-        speed: this.formatSpeed(avgSpeed),
-        summary,
-      });
-    });
-
-    const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-    const paginatedRows = rows.slice(start, end);
-
-    return {
-      rows: paginatedRows,
-      totalRows: rows.length,
-    };
+  if (points.length === 0) {
+    return { rows: [], totalRows: 0 };
   }
+
+  // Create a lookup for overspeed time ranges from stored segments
+  const overspeedRanges = trip.overspeedSegments.map(seg => ({
+    start: new Date(seg.startTime).getTime(),
+    end: new Date(seg.endTime).getTime(),
+  }));
+
+  const isInOverspeedSegment = (timestamp: Date): boolean => {
+    const time = new Date(timestamp).getTime();
+    return overspeedRanges.some(range => time >= range.start && time <= range.end);
+  };
+
+  interface EventSegment {
+    type: 'travel' | 'stoppage' | 'idling' | 'overspeeding';
+    startIndex: number;
+    endIndex: number;
+    startTime: Date;
+    endTime: Date;
+    totalDistance: number;
+    totalDuration: number;
+    location: { latitude: number; longitude: number };
+  }
+
+  const segments: EventSegment[] = [];
+  let currentSegment: EventSegment | null = null;
+
+  for (let i = 0; i < points.length; i++) {
+    const point = points[i];
+    const speed = point.speed || 0;
+
+    let eventType: 'travel' | 'stoppage' | 'idling' | 'overspeeding';
+
+    // Priority: stoppage > idling > overspeeding > travel
+    if (point.ignition === 'off') {
+      eventType = 'stoppage';
+    } else if (speed < 0.1) {
+      eventType = 'idling';
+    } else if (isInOverspeedSegment(point.timestamp)) {
+      eventType = 'overspeeding';
+    } else {
+      eventType = 'travel';
+    }
+
+    // Start new segment if type changes
+    if (!currentSegment || currentSegment.type !== eventType) {
+      if (currentSegment) {
+        segments.push(currentSegment);
+      }
+
+      currentSegment = {
+        type: eventType,
+        startIndex: i,
+        endIndex: i,
+        startTime: point.timestamp,
+        endTime: point.timestamp,
+        totalDistance: 0,
+        totalDuration: 0,
+        location: {
+          latitude: point.latitude,
+          longitude: point.longitude,
+        },
+      };
+    } else {
+      // Extend current segment
+      currentSegment.endIndex = i;
+      currentSegment.endTime = point.timestamp;
+
+      // Accumulate distance only on movement (from previous point)
+      if (i > 0) {
+        const prevPoint = points[i - 1];
+        const distance = this.calculateDistance(
+          { latitude: prevPoint.latitude, longitude: prevPoint.longitude },
+          { latitude: point.latitude, longitude: point.longitude }
+        );
+        currentSegment.totalDistance += distance;
+      }
+    }
+  }
+
+  // Push the last segment
+  if (currentSegment) {
+    segments.push(currentSegment);
+  }
+
+  // Calculate total duration for each segment
+  segments.forEach(segment => {
+    segment.totalDuration =
+      (new Date(segment.endTime).getTime() - new Date(segment.startTime).getTime()) / 1000;
+  });
+
+  // Generate table rows
+  segments.forEach(segment => {
+    // Skip zero-duration segments unless they are meaningful (e.g., brief idling/stoppage)
+    // Overspeeding segments will always have duration > 0 if they span at least two points
+    if (segment.totalDuration === 0 && segment.type !== 'idling' && segment.type !== 'stoppage') {
+      return;
+    }
+
+    const startPoint = points[segment.startIndex];
+    const avgSpeed =
+      segment.endIndex > segment.startIndex
+        ? points
+            .slice(segment.startIndex, segment.endIndex + 1)
+            .reduce((sum, p) => sum + (p.speed || 0), 0) /
+          (segment.endIndex - segment.startIndex + 1)
+        : (startPoint.speed || 0);
+
+    const summary: {
+      travelDuration?: string;
+      stoppedFrom?: string;
+      distance?: string;
+      overspeedingDuration?: string;
+      idlingDuration?: string;
+    } = {};
+
+    switch (segment.type) {
+      case 'stoppage':
+        summary.stoppedFrom = this.formatDuration(segment.totalDuration);
+        break;
+
+      case 'idling':
+        summary.idlingDuration = this.formatDuration(segment.totalDuration);
+        break;
+
+      case 'overspeeding':
+        summary.travelDuration = this.formatDuration(segment.totalDuration);
+        summary.distance = this.formatDistance(segment.totalDistance);
+        summary.overspeedingDuration = this.formatDuration(segment.totalDuration);
+        break;
+
+      case 'travel':
+        summary.travelDuration = this.formatDuration(segment.totalDuration);
+        summary.distance = this.formatDistance(segment.totalDistance);
+        break;
+    }
+
+    rows.push({
+      timeRange: this.formatTimeRange(segment.startTime, segment.endTime),
+      point: this.formatCoordinate(segment.location.latitude, segment.location.longitude),
+      ignition: startPoint.ignition.toUpperCase() as 'ON' | 'OFF',
+      speed: this.formatSpeed(avgSpeed),
+      summary,
+    });
+  });
+
+  // Pagination
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize;
+  const paginatedRows = rows.slice(start, end);
+
+  return {
+    rows: paginatedRows,
+    totalRows: rows.length,
+  };
+}
 
   private generateSummary(trip: ITrip): ITripSummaryDTO {
     const overspeedDuration = trip.overspeedSegments.reduce((total, seg) => {

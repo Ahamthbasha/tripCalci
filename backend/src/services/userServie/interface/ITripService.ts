@@ -81,15 +81,13 @@ export interface IGetMultipleTripsVisualizationResponse {
 export interface ITripService {
   uploadTrip(data: IUploadTripRequest): Promise<IUploadTripResponse>;
   getUserTrips(userId: string, page: number, limit: number): Promise<IGetTripsResponse>;
-  getTripDetails(tripId: string, userId: string): Promise<IGetTripDetailsResponse>;
+  
   getTripVisualization(
     tripId: string, 
     userId: string, 
     page?: number, 
     pageSize?: number
   ): Promise<IGetTripVisualizationResponse>;
-  
-  getMultipleTrips(tripIds: string[], userId: string): Promise<IGetTripsResponse>;
 
   getMultipleTripsVisualization(
     tripIds: string[], 

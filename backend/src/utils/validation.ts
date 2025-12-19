@@ -1,13 +1,6 @@
 export class ValidationHelper {
-  // Email validation regex - more comprehensive
   private static readonly EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
-  // Password must contain:
-  // - At least 8 characters
-  // - At least one uppercase letter
-  // - At least one lowercase letter
-  // - At least one number
-  // - At least one special character
   private static readonly PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/])[A-Za-z\d@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/]{8,}$/;
 
   static validateEmail(email: string): { isValid: boolean; message?: string } {
