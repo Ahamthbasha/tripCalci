@@ -62,7 +62,6 @@ export interface ITrip extends Document {
   stoppages: IStoppage[];
   idlings: IIdling[];
   overspeedSegments: IOverspeedSegment[];
-  isProcessed: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -213,11 +212,7 @@ const tripSchema = new Schema<ITrip>(
     overspeedSegments: {
       type: [overspeedSegmentSchema],
       default: [],
-    },
-    isProcessed: {
-      type: Boolean,
-      default: false,
-    },
+    }
   },
   {
     timestamps: true,
