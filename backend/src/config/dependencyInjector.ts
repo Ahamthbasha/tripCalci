@@ -28,10 +28,13 @@ import { ITripController } from "../controllers/userControllers/Interface/ITripC
 import { TripController } from "../controllers/userControllers/tripController";
 import { ITripCalculationService } from "../services/userServie/interface/ITripCalculationService";
 import { TripCalculationService } from "../services/userServie/tripCalculationService";
+import { ITripDTOMapper } from "../dto/userDTO/ITripDTO";
+import { TripDTOMapper } from "../mapper/userMapper/tripDTOMapper";
 
 const userTripRepo : ITripRepo = new TripRepo()
 const userTripCalculationService : ITripCalculationService = new TripCalculationService()
-const userTripService : ITripService = new TripService(userTripRepo,userTripCalculationService)
+const userTripDtoMapper : ITripDTOMapper = new TripDTOMapper()
+const userTripService : ITripService = new TripService(userTripRepo,userTripCalculationService,userTripDtoMapper)
 const userTripController : ITripController = new TripController(userTripService)
 
 export {

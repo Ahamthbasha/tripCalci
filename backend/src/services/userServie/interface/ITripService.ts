@@ -49,7 +49,6 @@ export interface IGetTripsResponse {
       maxSpeed: number;
       avgSpeed: number;
     };
-    isProcessed: boolean;
   }>;
   pagination?: {
     currentPage: number;
@@ -58,12 +57,6 @@ export interface IGetTripsResponse {
     hasNextPage: boolean;
     hasPrevPage: boolean;
   };
-}
-
-export interface IGetTripDetailsResponse {
-  success: boolean;
-  message: string;
-  trip?: ITrip;
 }
 
 export interface IGetTripVisualizationResponse {

@@ -35,7 +35,7 @@ router.get(
     userTripController.getTripVisualization.bind(userTripController)
 )
 
-router.post(
+router.get(
     "/trips/visualization",
     authMiddleware.authenticateToken,
     userTripController.getMultipleTripsVisualization.bind(userTripController)

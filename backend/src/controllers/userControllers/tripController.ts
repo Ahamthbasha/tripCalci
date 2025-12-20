@@ -258,7 +258,6 @@ export class TripController implements ITripController {
     }
   }
 
-
   async getMultipleTripsVisualization(
     req: AuthenticatedRequest,
     res: Response
@@ -272,18 +271,43 @@ export class TripController implements ITripController {
         return;
       }
 
-      const { tripIds } = req.body;
+      // Get tripIds from query params (standard GET approach)
+      const { tripIds } = req.query;
 
-      if (!tripIds || !Array.isArray(tripIds) || tripIds.length === 0) {
+      if (!tripIds) {
         res.status(400).json({
           success: false,
-          message: "Trip IDs array is required",
+          message: "Trip IDs are required (use ?tripIds=id1,id2,id3)",
+        });
+        return;
+      }
+
+      // Convert comma-separated string to array
+      const tripIdsArray = typeof tripIds === 'string' 
+        ? tripIds.split(',').map(id => id.trim()).filter(Boolean)
+        : Array.isArray(tripIds) 
+          ? tripIds.map(id => String(id).trim()).filter(Boolean)
+          : [];
+
+      if (tripIdsArray.length === 0) {
+        res.status(400).json({
+          success: false,
+          message: "At least one valid trip ID is required",
+        });
+        return;
+      }
+
+      // Optional: Add a limit on number of trips that can be fetched at once
+      if (tripIdsArray.length > 10) {
+        res.status(400).json({
+          success: false,
+          message: "Maximum 10 trips can be visualized at once",
         });
         return;
       }
 
       const result = await this._tripService.getMultipleTripsVisualization(
-        tripIds,
+        tripIdsArray,
         req.user.id
       );
 

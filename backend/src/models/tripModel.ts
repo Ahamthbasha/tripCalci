@@ -1,6 +1,5 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 
-// GPS Point Interface
 export interface IGPSPoint {
   latitude: number;
   longitude: number;
@@ -9,40 +8,36 @@ export interface IGPSPoint {
   speed?: number; 
 }
 
-// Trip Summary Interface
 export interface ITripSummary {
-  totalDistance: number; // in meters
-  totalDuration: number; // in seconds
-  stoppageDuration: number; // in seconds
-  idlingDuration: number; // in seconds
+  totalDistance: number; 
+  totalDuration: number; 
+  stoppageDuration: number; 
+  idlingDuration: number;
   overspeedCount: number;
-  maxSpeed: number; // in km/h
-  avgSpeed: number; // in km/h
+  maxSpeed: number; 
+  avgSpeed: number;
 }
 
-// Stoppage Interface
 export interface IStoppage {
   startTime: Date;
   endTime: Date;
-  duration: number; // in seconds
+  duration: number;
   location: {
     latitude: number;
     longitude: number;
   };
 }
 
-// Idling Interface
 export interface IIdling {
   startTime: Date;
   endTime: Date;
-  duration: number; // in seconds
+  duration: number;
   location: {
     latitude: number;
     longitude: number;
   };
 }
 
-// Overspeed Segment Interface
 export interface IOverspeedSegment {
   startTime: Date;
   endTime: Date;
@@ -57,7 +52,6 @@ export interface IOverspeedSegment {
   maxSpeed: number;
 }
 
-// Main Trip Interface
 export interface ITrip extends Document {
   _id: Types.ObjectId;
   userId: Types.ObjectId;
@@ -73,7 +67,6 @@ export interface ITrip extends Document {
   updatedAt: Date;
 }
 
-// GPS Point Schema
 const gpsPointSchema = new Schema<IGPSPoint>(
   {
     latitude: {
@@ -101,7 +94,6 @@ const gpsPointSchema = new Schema<IGPSPoint>(
   { _id: false }
 );
 
-// Trip Summary Schema
 const tripSummarySchema = new Schema<ITripSummary>(
   {
     totalDistance: {
@@ -136,7 +128,6 @@ const tripSummarySchema = new Schema<ITripSummary>(
   { _id: false }
 );
 
-// Stoppage Schema
 const stoppageSchema = new Schema<IStoppage>(
   {
     startTime: { type: Date, required: true },
@@ -150,7 +141,6 @@ const stoppageSchema = new Schema<IStoppage>(
   { _id: false }
 );
 
-// Idling Schema
 const idlingSchema = new Schema<IIdling>(
   {
     startTime: { type: Date, required: true },
@@ -164,7 +154,6 @@ const idlingSchema = new Schema<IIdling>(
   { _id: false }
 );
 
-// Overspeed Segment Schema
 const overspeedSegmentSchema = new Schema<IOverspeedSegment>(
   {
     startTime: { type: Date, required: true },
@@ -182,7 +171,6 @@ const overspeedSegmentSchema = new Schema<IOverspeedSegment>(
   { _id: false }
 );
 
-// Main Trip Schema
 const tripSchema = new Schema<ITrip>(
   {
     userId: {
@@ -236,7 +224,6 @@ const tripSchema = new Schema<ITrip>(
   }
 );
 
-// Indexes for better query performance
 tripSchema.index({ userId: 1, uploadDate: -1 });
 tripSchema.index({ userId: 1, createdAt: -1 });
 

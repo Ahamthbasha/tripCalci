@@ -63,7 +63,6 @@ export interface Trip {
   tripName: string;
   uploadDate: Date;
   summary: TripSummary;
-  isProcessed: boolean;
 }
 
 // ==================== TRIP DETAILS (Full View) ====================

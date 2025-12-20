@@ -3,27 +3,27 @@ import {
   IUploadTripRequest,
   IUploadTripResponse,
   IGetTripsResponse,
-  IGetTripDetailsResponse,
   IGetTripVisualizationResponse,
   IGetMultipleTripsVisualizationResponse,
 } from "./interface/ITripService";
 import { ITripRepo } from "../../repositories/userRepo/interface/ITripRepo";
 import { ITripCalculationService } from "./interface/ITripCalculationService";
 import { IGPSPoint } from "../../models/tripModel";
-import { TripDTOMapper } from "../../mapper/userMapper/tripDTOMapper";
+import { ITripDTOMapper } from "../../dto/userDTO/ITripDTO";
 
 export class TripService implements ITripService {
   private _tripRepo: ITripRepo;
   private _calculationService: ITripCalculationService;
-  private _dtoMapper: TripDTOMapper;
+  private _dtoMapper: ITripDTOMapper;
 
   constructor(
     tripRepo: ITripRepo,
-    calculationService: ITripCalculationService
+    calculationService: ITripCalculationService,
+    dtoMapper: ITripDTOMapper
   ) {
     this._tripRepo = tripRepo;
     this._calculationService = calculationService;
-    this._dtoMapper = new TripDTOMapper();
+    this._dtoMapper = dtoMapper;
   }
 
   async uploadTrip(data: IUploadTripRequest): Promise<IUploadTripResponse> {
@@ -78,7 +78,6 @@ export class TripService implements ITripService {
         stoppages: calculations.stoppages,
         idlings: calculations.idlings,
         overspeedSegments: calculations.overspeedSegments,
-        isProcessed: true,
       } as any);
 
       return {
@@ -121,7 +120,6 @@ export class TripService implements ITripService {
           tripName: trip.tripName,
           uploadDate: trip.uploadDate,
           summary: trip.summary,
-          isProcessed: trip.isProcessed,
         })),
         pagination: {
           currentPage: page,
@@ -181,6 +179,13 @@ export class TripService implements ITripService {
     userId: string
   ): Promise<IGetMultipleTripsVisualizationResponse> {
     try {
+      if (!tripIds || tripIds.length === 0) {
+        return {
+          success: false,
+          message: "Trip IDs are required",
+        };
+      }
+
       const trips = await this._tripRepo.findMultipleByIdsAndUserId(
         tripIds,
         userId

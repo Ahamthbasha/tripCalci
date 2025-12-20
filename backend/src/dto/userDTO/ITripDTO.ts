@@ -1,3 +1,5 @@
+import { ITrip } from "../../models/tripModel";
+
 export interface IGPSPointDTO {
   latitude: number;
   longitude: number;
@@ -98,4 +100,16 @@ export interface IMultipleTripsVisualizationDTO {
     east: number;
     west: number;
   };
+}
+
+export interface ITripDTOMapper {
+  mapTripToVisualizationDTO(
+    trip: ITrip,
+    page?: number,
+    pageSize?: number
+  ): ITripVisualizationDTO;
+
+  mapMultipleTripsToVisualizationDTO(
+    trips: ITrip[]
+  ): IMultipleTripsVisualizationDTO;
 }

@@ -31,10 +31,13 @@ export const getTripVisualization = async (
 };
 
 export const getMultipleTripsVisualization = async (tripIds: string[]) => {
-  const response = await API.post(
+  const tripIdParam = tripIds.join(",")
+  const response = await API.get(
     userRouterEndPoints.userGetMultipleTripsVisualization,
     {
-      tripIds,
+      params:{
+        tripsIds:tripIdParam
+      }
     }
   );
   return response.data;

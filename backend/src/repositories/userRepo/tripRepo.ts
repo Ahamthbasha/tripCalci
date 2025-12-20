@@ -55,7 +55,6 @@ export class TripRepo extends GenericRepo<ITrip> implements ITripRepo {
             stoppages: data.stoppages,
             idlings: data.idlings,
             overspeedSegments: data.overspeedSegments,
-            isProcessed: true,
           },
         },
         { new: true }
