@@ -12,8 +12,13 @@ import iconRetina from 'leaflet/dist/images/marker-icon-2x.png';
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+// Type-safe way to handle Leaflet icon default
+interface LeafletIconDefault extends L.Icon.Default {
+  _getIconUrl?: () => string;
+}
+
+const iconDefault = L.Icon.Default.prototype as LeafletIconDefault;
+delete iconDefault._getIconUrl;
 
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: iconRetina,
